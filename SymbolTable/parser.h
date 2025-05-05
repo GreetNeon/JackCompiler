@@ -1,7 +1,11 @@
-#define TEST_PARSER  // uncomment to run selfgrader for the parser
+//#define TEST_PARSER  // uncomment to run selfgrader for the parser
 
 #include "lexer.h"
 
+
+
+#ifndef PARSER_HEADER_DEFINED
+#define PARSER_HEADER_DEFINED
 typedef enum {
 	none,					// no errors
 	lexerErr,				// lexer error
@@ -18,7 +22,11 @@ typedef enum {
 	closeParenExpected,		// ) expected
 	closeBracketExpected,	// ] expected
 	equalExpected,			// = expected
-	syntaxError				// any other kind of syntax error
+	syntaxError,			// any other kind of syntax error
+	// extend this list to include two types of semantic errors
+	undecIdentifier,		// undeclared identifier (e.g. class, subroutine, or variable)
+	redecIdentifier,		// redeclaration of identifier in the same scope
+	NoLexErr
 } SyntaxErrors;
 
 
@@ -59,3 +67,4 @@ void ArithmeticExpression(); // parse an arithmetic expression (a term or a seri
 void term(); // parse a term (a variable, a constant, or an expression in parentheses)
 void factor(); // parse a factor (a variable, a constant, or a string literal)
 void Operand(); // parse an operand (a variable, a constant, or a string literal)
+#endif

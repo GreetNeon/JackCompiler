@@ -845,12 +845,12 @@ int StopParser ()
 }
 
 #ifndef TEST_PARSER
-int main ()
-{
-	printf("Parser module\n");
-	InitParser("Main.jack");
-	ParserInfo pi = Parse();
-	StopParser();
-	return 0;
-}
+// int main ()
+// {
+// 	printf("Parser module\n");
+// 	InitParser("Main.jack");
+// 	ParserInfo pi = Parse();
+// 	StopParser();
+// 	return 0;
+// }
 #endif

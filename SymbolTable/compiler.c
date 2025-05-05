@@ -1,27 +1,57 @@
-
 /************************************************************************
 University of Leeds
 School of Computing
 COMP2932- Compiler Design and Construction
-The Symbol Tables Module
+The Compiler Module
 
 I confirm that the following code has been developed and written by me and it is entirely the result of my own work.
 I also confirm that I have not copied any parts of this program from another person or any other source or facilitated someone to copy this program from me.
 I confirm that I will not publish the program online or share it with anyone without permission of the module leader.
 
-Student Name:Teon Green
-Student ID:201734612
-Email:sc23tg@leeds.ac.uk
-Date Work Commenced:27/04/25
+Student Name:
+Student ID:
+Email:
+Date Work Commenced:
 *************************************************************************/
+#include <stdio.h>
+#include "compiler.h"
+#define COMPILER_C
 
-// To Run
-#include "symbols.h"
 
-#ifndef InitCompiler
-SymbolTable ProgramScopeTable;
-#endif
-
-void InsertSymbol(Symbol s){
-    
+int InitCompiler ()
+{
+	return 1;
 }
+
+
+ParserInfo compile (char* dir_name)
+{
+	ParserInfo p;
+
+	// write your code below
+
+
+	p.er = none;
+	return p;
+}
+
+int StopCompiler ()
+{
+
+
+	return 1;
+}
+
+
+#ifndef TEST_COMPILER
+int main ()
+{
+	InitCompiler ();
+	ParserInfo p = compile ("Pong");
+	#ifdef PrintError
+	PrintError (p);
+	#endif
+	StopCompiler ();
+	return 1;
+}
+#endif

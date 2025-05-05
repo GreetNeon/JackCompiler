@@ -10,13 +10,18 @@ typedef struct{
     char type[128];
     char kind[128];
     int calls;
+    struct Symbol* parent;
+    struct Symbol* children;
+    struct Symbol* next;
 } Symbol;
 
 typedef struct{
     Symbol table[1280];
-    SymbolTable child_tables[128];
+    int len;
 } SymbolTable;
 
+Symbol CreateSymbol(char* Name, char* Type, char* Kind);
+Symbol CreateChildSymbol(char* Name, char* Type, char* Kind, Symbol* parent);
 void InsertSymbol(Symbol s);
 void LocateSymbol(char* name);
 

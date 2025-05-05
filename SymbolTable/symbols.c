@@ -17,11 +17,30 @@ Date Work Commenced:27/04/25
 
 // To Run
 #include "symbols.h"
+#include <string.h>
+#include <stdio.h>
 
-#ifndef InitCompiler
-SymbolTable ProgramScopeTable;
-#endif
 
+SymbolTable ProgramScope; ProgramScope.len = 0; // Initialize the length of the symbol table to 0
+
+Symbol CreateSymbol(char* Name, char* Type, char* Kind){
+    Symbol TempSymbol;
+    strcpy(TempSymbol.name, Name);
+    strcpy(TempSymbol.type, Type);
+    strcpy(TempSymbol.kind, Kind);
+    TempSymbol.calls = 0;
+    #ifdef ProgramScope
+    //DO this
+    ProgramScope.table[ProgramScope.len] = TempSymbol;
+    ProgramScope.len++;
+    #else
+    printf("Compiler Not Initialized");
+    #endif
+}
 void InsertSymbol(Symbol s){
-    
+
+}
+
+int main(){
+    return 0;
 }

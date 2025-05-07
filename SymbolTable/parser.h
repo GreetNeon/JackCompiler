@@ -1,6 +1,7 @@
 //#define TEST_PARSER  // uncomment to run selfgrader for the parser
 
 #include "lexer.h"
+#include "symbols.h"
 
 
 

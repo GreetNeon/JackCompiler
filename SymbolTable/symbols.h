@@ -5,25 +5,59 @@
 #include "parser.h"
 
 // define your own types and function prototypes for the symbol table(s) module below
+
+// typedef struct{
+//     char name[128];
+//     char type[128];
+//     char kind[128];
+//     int calls;
+//     struct Symbol* parent;
+//     struct Symbol* children[128];
+//     int childCount;
+//     struct Symbol* next;
+// } Symbol;
+
+// typedef struct{
+//     Symbol table[1280];
+//     int len;
+// } SymbolTable;
+
+typedef enum {STATIC, FIELD, ARG, VAR, METHOD, FUNCTION, CONSTRUCTOR, CLASS} Kind; // Define the kinds of symbols
+typedef enum {INTEGER, CHAR, BOOLEAN, IDENTIFIER} Type; // Define the types of symbols
+
+
 typedef struct{
     char name[128];
-    char type[128];
-    char kind[128];
+    Type type;
+    Kind kind;
     int calls;
-    struct Symbol* parent;
-    struct Symbol* children;
-    struct Symbol* next;
 } Symbol;
 
-typedef struct{
-    Symbol table[1280];
-    int len;
-} SymbolTable;
+typedef struct SymbolTable{
+    Symbol table[1280]; // Array of symbols
+    int len;            // Number of symbols in the table
+    struct SymbolTable* parent; // Pointer to the parent symbol table (if any)
+    struct SymbolTable* children[128]; // Array of child symbol tables
+    int childCount;     // Number of child symbol tables
+} SymbolTable; // Define the SymbolTable type
 
-Symbol CreateSymbol(char* Name, char* Type, char* Kind);
-Symbol CreateChildSymbol(char* Name, char* Type, char* Kind, Symbol* parent);
-void InsertSymbol(Symbol s);
-void LocateSymbol(char* name);
+typedef struct{
+    char data[128][128]; // Array of strings to store symbols
+    int topIndex; // Index of the top of the stack
+} Stack; // Define the Stack type
+
+Type GetType(char* type);
+Kind GetKind(char* kind);
+void InitSymbolTable(SymbolTable* st);
+void InsertSymbol(char* name, Type type, Kind kind, SymbolTable* st);
+int LocateSymbol(char* name, SymbolTable* st);
+int IndexTable(char* name, SymbolTable* st);
+void InsertChildTable(SymbolTable* parent, SymbolTable* child);
+int IndexParents(char* name, SymbolTable* st);
+int IndexChildren(char* name, SymbolTable* st);
+char* pop(Stack* s);
+void push(Stack* s, char* str);
+void InitStack(Stack* s);
 
 
 #endif

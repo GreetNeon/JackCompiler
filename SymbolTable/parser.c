@@ -4,12 +4,18 @@
 
 #include "lexer.h"
 #include "parser.h"
+#include "symbols.h"
 
 
 // you can declare prototypes of parser functions below
 
 ParserInfo pi;
 int ErrorFlag = 1;
+char SB[1280][128]; // SymbolBuffer
+int BI[1280]; // BufferIndex
+int SBI = 0; // SymbolBufferIndex
+int SBC = 0; // SymbolBufferCount
+SymbolTable ProgramScope;
 
 void error (SyntaxErrors err, Token t){
 	if (ErrorFlag == 0){
@@ -20,10 +26,21 @@ void error (SyntaxErrors err, Token t){
 	ErrorFlag = 0;
 }
 
+int InitParser (char* file_name)
+{
+	Token temp; temp.tp = ERR;
+	InitSymbolTable(&ProgramScope);
+	InitLexer(file_name);
+	pi.er = none;
+	pi.tk = temp;
+	return 1;
+}
+
 void classDeclar(){
 	Token t = PeekNextToken();
 	if (strcmp(t.lx, "class") == 0){
 		GetNextToken(); // consume the token
+		SBI++;
 	} else {
 		error(classExpected, t);
 		return;
@@ -778,14 +795,7 @@ void Operand(){
 }
 
 
-int InitParser (char* file_name)
-{
-	Token temp; temp.tp = ERR;
-	InitLexer(file_name);
-	pi.er = none;
-	pi.tk = temp;
-	return 1;
-}
+
 
 ParserInfo Parse ()
 {

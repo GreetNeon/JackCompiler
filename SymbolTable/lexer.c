@@ -22,6 +22,7 @@ Date Work Commenced:25/2/2025
 #include <stdbool.h>
 #include <ctype.h>
 #include "lexer.h"
+#include "compiler.h"
 
 
 // YOU CAN ADD YOUR OWN FUNCTIONS, DECLARATIONS AND VARIABLES HERE
@@ -248,6 +249,7 @@ void StoreTokens(){
   //Build the token stream and store it in the token list
   // This function should be called after the lexer has been initialised and the source file opened
   int tok = 0;
+  count++;
   while (1){
     if (TokenReady){
       TokenList[tok] = t;
@@ -259,6 +261,8 @@ void StoreTokens(){
     FetchToken();
   }
   TokenListReady = true;
+  //print tokken list
+  
 }
 
 Token GetNextToken ()
@@ -266,7 +270,6 @@ Token GetNextToken ()
   // Get the next token from the token list
   if (TokenListReady){
 	Token current = TokenList[CurrentToken];
-  printf("Current Token: %s\n", current.lx);
   CurrentToken++;
   return current;
 }
@@ -281,6 +284,8 @@ Token PeekNextToken ()
 {
   if (TokenListReady){
     Token current = TokenList[CurrentToken];
+      if (count > 2 && count <4){
+  }
     return current;
   }
   t.tp = ERR;
@@ -290,11 +295,11 @@ Token PeekNextToken ()
 int InitLexer (char* file_name)
 {
   strcpy(current_file, file_name);
-  printf("Current file: %s\n", current_file);
+  // printf("Current file: %s\n", current_file);
   input = fopen(file_name, "r");
-  printf("input: %p\n", input);
+  // printf("input: %p\n", input);
   if (input == NULL){
-    printf("Error: File not found\n");
+    // printf("Error: File not found\n");
     return 0;
   }
   TokenListReady = false;
@@ -318,6 +323,14 @@ int StopLexer ()
   LineCount = 0;
   CurrentToken = 0;
   TokenReady = false;
+  //clear token list
+  for (int i = 0; i < 10000; i++){
+    TokenList[i].tp = ERR;
+    TokenList[i].ln = -1;
+    strcpy(TokenList[i].lx, "");
+    strcpy(TokenList[i].fl, "");
+  }
+  //clear token
   
   return 1;
 }

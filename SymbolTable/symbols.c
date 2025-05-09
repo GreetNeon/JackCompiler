@@ -93,7 +93,7 @@ int IndexTable(char* name, SymbolTable* st) {
 }
 
 int IndexParents(char* name, SymbolTable* st){
-    printf("Searching in parent symbol table...\n");
+    //printf("Searching in parent symbol table...\n");
     // Search for the symbol in the parent symbol table
     if (st == NULL) {
         // Return -1 if the symbol table is NULL
@@ -114,7 +114,7 @@ int IndexParents(char* name, SymbolTable* st){
     return -1; // Search in the parent symbol table
 }
 int IndexChildren(char* name, SymbolTable* st) {
-    printf("Searching in child symbol tables...\n");
+    //printf("Searching in child symbol tables...\n");
     // Search for the symbol in the child symbol tables
     if (st == NULL) {
         return -1; // Return -1 if the symbol table is NULL
@@ -235,18 +235,20 @@ char* pop(Stack* s) {
 
 void pushId(IdentifierStack* s, char* str, SymbolTable* st, Token t) {
     // Push an identifier onto the identifier stack
+    char accepted[10][20] = {"Array", "String"};
     if (s->topIndex >= 1279) {
         printf("Identifier stack overflow. Cannot push new identifier.\n");
         return;
     }
     // Check if the identifier already exists in the stack
     int idx = indexIdStack(s, str, st);
-    if (idx != -1) {
+    if (idx != -1 || strcmp(str, "Array") == 0 || strcmp(str, "String") == 0) {
         //printf("%s already exists in the stack.\n", str);
         // Check if the identifier is in the same scope
         //printf("Identifier: %s, Scope: %p, Stack Scope: %p\n", str, st, s->data[idx]->scope);
         return; // Return if the identifier already exists
     }
+    printf("Pushing identifier: %s\n", str);
     IdentifierStrct* id = (IdentifierStrct*)malloc(sizeof(IdentifierStrct)); // Allocate memory for the identifier
     strcpy(id->name, str); // Copy the identifier name
     id->scope = st; // Set the scope of the identifier

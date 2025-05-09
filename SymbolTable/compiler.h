@@ -9,6 +9,7 @@
 SymbolTable ProgramScope;
 Stack SymbolStack; // Stack for symbol table scopes
 IdentifierStack IdStack; // Stack for identifiers
+int count;
 
 int InitCompiler ();
 ParserInfo compile (char* dir_name);

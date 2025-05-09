@@ -20,6 +20,13 @@ Date Work Commenced:
 #include "compiler.h"
 #define COMPILER_C
 
+//Issues to fix:
+//1. Compile all files in the same directory as the directory given
+//2. implement identifier pairs for calls
+//3. cry urself to sleep
+//4. with identifier pairs, try to find first identifier, then find the second identifier in the child scope
+
+
 
 int InitCompiler ()
 {

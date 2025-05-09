@@ -4,6 +4,7 @@
 
 #include "lexer.h"
 #include "parser.h"
+#include "symbols.h"
 
 
 // you can declare prototypes of parser functions below
@@ -23,6 +24,7 @@ void error (SyntaxErrors err, Token t){
 void classDeclar(){
 	Token t = PeekNextToken();
 	if (strcmp(t.lx, "class") == 0){
+
 		GetNextToken(); // consume the token
 	} else {
 		error(classExpected, t);
@@ -728,6 +730,16 @@ void Operand(){
 					t = GetNextToken();
 					if (strcmp(t.lx, ")") != 0){
 						error(closeBracketExpected, t);
+
+						return;
+}}}}
+int InitParser(char* file_name){
+	Token temp; temp.tp = ERR;
+	InitLexer(file_name);
+	pi.er = none;
+	pi.tk = temp;
+	return 1;
+}
 						return;
 					}
 				}
@@ -778,14 +790,7 @@ void Operand(){
 }
 
 
-int InitParser (char* file_name)
-{
-	Token temp; temp.tp = ERR;
-	InitLexer(file_name);
-	pi.er = none;
-	pi.tk = temp;
-	return 1;
-}
+
 
 ParserInfo Parse ()
 {

@@ -6,6 +6,10 @@
 #include "parser.h"
 #include "symbols.h"
 
+SymbolTable ProgramScope;
+Stack SymbolStack; // Stack for symbol table scopes
+Stack IdentifierStack; // Stack for identifiers
+
 int InitCompiler ();
 ParserInfo compile (char* dir_name);
 int StopCompiler();

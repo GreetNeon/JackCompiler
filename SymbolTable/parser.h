@@ -1,12 +1,9 @@
 //#define TEST_PARSER  // uncomment to run selfgrader for the parser
 
-#include "lexer.h"
-#include "symbols.h"
-
-
-
 #ifndef PARSER_HEADER_DEFINED
 #define PARSER_HEADER_DEFINED
+#include "lexer.h"
+#include "symbols.h"
 typedef enum {
 	none,					// no errors
 	lexerErr,				// lexer error
@@ -47,17 +44,17 @@ int StopParser (); // stop the parser and do any necessary clean up
 char* ErrorString (SyntaxErrors e);
 void error (SyntaxErrors err, Token t); // print an error message and exit the program
 void classDeclar(); // parse a class declaration
-void memberDeclar(); // parse a class member declaration
-void classVarDeclar(); // parse a class variable declaration
-void type(); // parse a type (int, char, boolean, or identifier)
-void subroutineDeclar(); // parse a subroutine declaration (constructor, function, or method)
-void paramList(); // parse a parameter list (a list of types and identifiers)
-void subroutineBody(); // parse a subroutine body (a list of statements)
-void statement(); // parse a statement (let, if, while, do, return)
-void varDeclarStatement(); // parse a variable declaration statement (var)
+void memberDeclar(SymbolTable* cs/*class scope*/); // parse a class member declaration
+void classVarDeclar(SymbolTable* cs/*class scope*/); // parse a class variable declaration
+void type(SymbolTable* CurrentScope); // parse a type (int, char, boolean, or identifier)
+void subroutineDeclar(SymbolTable* cs/*class scope*/); // parse a subroutine declaration (constructor, function, or method)
+void paramList(SymbolTable* ss /*subroutine scope*/); // parse a parameter list (a list of types and identifiers)
+void subroutineBody(SymbolTable* ss /*subroutine scope*/); // parse a subroutine body (a list of statements)
+void statement(SymbolTable* ss); // parse a statement (let, if, while, do, return)
+void varDeclarStatement(SymbolTable* s/*scope*/); // parse a variable declaration statement (var)
 void letStatement(); // parse a let statement (let)
-void ifStatement(); // parse an if statement (if)
-void whileStatement(); // parse a while statement (while)
+void ifStatement(SymbolTable* s/*scope*/); // parse an if statement (if)
+void whileStatement(SymbolTable* s/*scope*/); // parse a while statement (while)
 void doStatement(); // parse a do statement (do)
 void subroutineCall(); // parse a subroutine call (a method or function call)
 void expressionList(); // parse an expression list (a list of expressions)

@@ -1,35 +1,16 @@
 #ifndef SYMBOLS_H
 #define SYMBOLS_H
 
-#include "lexer.h"
-#include "parser.h"
-
 // define your own types and function prototypes for the symbol table(s) module below
 
-// typedef struct{
-//     char name[128];
-//     char type[128];
-//     char kind[128];
-//     int calls;
-//     struct Symbol* parent;
-//     struct Symbol* children[128];
-//     int childCount;
-//     struct Symbol* next;
-// } Symbol;
-
-// typedef struct{
-//     Symbol table[1280];
-//     int len;
-// } SymbolTable;
-
 typedef enum {STATIC, FIELD, ARG, VAR, METHOD, FUNCTION, CONSTRUCTOR, CLASS} Kind; // Define the kinds of symbols
-typedef enum {INTEGER, CHAR, BOOLEAN, IDENTIFIER} Type; // Define the types of symbols
-
+typedef enum {INTEGER, CHAR, BOOLEAN, ARRAY, IDENTIFIER} Type; // Define the types of symbols
 
 typedef struct{
     char name[128];
     Type type;
     Kind kind;
+    char IDNAME[128]; // Identifier name
     int calls;
 } Symbol;
 
@@ -42,7 +23,7 @@ typedef struct SymbolTable{
 } SymbolTable; // Define the SymbolTable type
 
 typedef struct{
-    char data[128][128]; // Array of strings to store symbols
+    char data[1280][128]; // Array of strings to store symbols
     int topIndex; // Index of the top of the stack
 } Stack; // Define the Stack type
 
@@ -51,6 +32,8 @@ Kind GetKind(char* kind);
 void InitSymbolTable(SymbolTable* st);
 void InsertSymbol(char* name, Type type, Kind kind, SymbolTable* st);
 int LocateSymbol(char* name, SymbolTable* st);
+Symbol* GetSymbol(char* name, SymbolTable* st);
+Symbol* GetSymbolGlobal(char* name, SymbolTable* st);
 int IndexTable(char* name, SymbolTable* st);
 void InsertChildTable(SymbolTable* parent, SymbolTable* child);
 int IndexParents(char* name, SymbolTable* st);
@@ -58,6 +41,6 @@ int IndexChildren(char* name, SymbolTable* st);
 char* pop(Stack* s);
 void push(Stack* s, char* str);
 void InitStack(Stack* s);
-
+void printTable(SymbolTable* st);
 
 #endif

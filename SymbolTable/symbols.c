@@ -1,4 +1,3 @@
-
 /************************************************************************
 University of Leeds
 School of Computing
@@ -17,6 +16,7 @@ Date Work Commenced:27/04/25
 
 // To Run
 #include "symbols.h"
+#include "parser.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,7 +25,7 @@ Date Work Commenced:27/04/25
 
 Type GetType(char* type) {
     // Map string representation of type to enum Type
-    if (strcmp(type, "int") == 0) return INT;
+    if (strcmp(type, "int") == 0) return INTEGER; // Corrected INT to INTEGER
     if (strcmp(type, "char") == 0) return CHAR;
     if (strcmp(type, "boolean") == 0) return BOOLEAN;
     if (strcmp(type, "identifier") == 0) return IDENTIFIER;
@@ -89,16 +89,19 @@ int IndexParents(char* name, SymbolTable* st){
     // Search for the symbol in the parent symbol table
     if (st == NULL) {
         // Return -1 if the symbol table is NULL
+        return -1;
     }
     else if (st->parent == NULL) {
         // Return -1 if the parent symbol table is NULL
+        return -1;
     }
-    else if (IndexTable(name, st->parent) != -1) {
-        return 0; // Return 0 if the symbol is found in the parent table
-    
+    int i = IndexTable(name, st->parent);
+    if (i != -1) {
+        return i; // Return 0 if the symbol is found in the parent table
     }
-    else if (IndexParents(name, st->parent) != -1) {
-        return 0; // Return 0 if the symbol is found in the parent table 
+    i = IndexParents(name, st->parent);
+    if (i != -1) {
+        return i; // Return 0 if the symbol is found in the parent table 
     }
     return -1; // Search in the parent symbol table
 }
@@ -114,10 +117,10 @@ int IndexChildren(char* name, SymbolTable* st) {
     else {
         for (int i = 0; i < st->childCount; i++) {
             if (IndexTable(name, st->children[i]) != -1) {
-                return 0; // Return 0 if the symbol is found in a child table
+                return i; // Return 0 if the symbol is found in a child table
             }
             else if (IndexChildren(name, st->children[i]) != -1) {
-                return 0; // Return 0 if the symbol is found in a child table
+                return i; // Return 0 if the symbol is found in a child table
             }
         }
 
@@ -144,17 +147,49 @@ int LocateSymbol(char* name, SymbolTable* st) {
     return -1; // Return -1 if the symbol is not found
 }
 
+Symbol* GetSymbol(char* name, SymbolTable* st) {
+    // Search for the symbol in the symbol table
+    if (st == NULL) {
+        ////printf("Symbol table is NULL\n");
+        return NULL; // Return NULL if the symbol table is NULL
+    }
+    else if (IndexTable(name, st) != -1) {
+        //printf("Symbol found in current table\n");
+        return &st->table[IndexTable(name, st)]; // Return the symbol if found
+    }
+    return NULL; // Return NULL if the symbol is not found
+}
+
+Symbol* GetSymbolGlobal(char* name, SymbolTable* st) {
+    // Search for the symbol in the global symbol table
+    if (st == NULL) {
+        return NULL; // Return NULL if the symbol table is NULL
+    }
+    int i = IndexTable(name, st);
+    if (i != -1) {
+        return &st->table[i]; // Return the symbol if found
+    }
+    else if (IndexParents(name, st) != -1) {
+        return GetSymbolGlobal(name, st->parent); // Search in the parent symbol table
+    }
+    int j = IndexChildren(name, st);
+    if (j != -1) {
+        return GetSymbolGlobal(name, st->children[j]); // Search in the child symbol tables
+    }
+    return NULL; // Return NULL if the symbol is not found
+}
+
 // Function to insert a child symbol table into a parent symbol table
 void InsertChildTable(SymbolTable* parent, SymbolTable* child) {
     // Check if the parent symbol table can accommodate a new child
     if (parent->childCount >= 128) {
-        printf("Parent symbol table cannot accommodate more child tables.\n");
         return;
     }
 
     // Insert the child symbol table into the parent symbol table
     parent->children[parent->childCount] = child;
     parent->childCount++;
+    child->parent = parent; // Set the parent of the child symbol table
 }
 
 void InitStack(Stack* s) {
@@ -185,99 +220,112 @@ char* pop(Stack* s) {
     return temp; // Return the popped string
 }
 
-#ifndef COMPILER_H
-void main(){
-    // Example usage of the symbol table functions
-    SymbolTable st;
-    SymbolTable childSt;
-    SymbolTable grandChildSt;
-    SymbolTable greatGrandChildSt;
-    st.len = 0;
-    st.childCount = 0;
-    st.parent = NULL;
-    childSt.len = 0;
-    childSt.childCount = 0;
-    childSt.parent = &st;
-    grandChildSt.len = 0;
-    grandChildSt.childCount = 0;
-    grandChildSt.parent = &childSt;
-    greatGrandChildSt.len = 0;
-    greatGrandChildSt.childCount = 0;
-    greatGrandChildSt.parent = &grandChildSt;
-    // Initialize the symbol tables
-    InsertChildTable(&st, &childSt); // Insert child table into parent table
-    InsertChildTable(&childSt, &grandChildSt); // Insert grandchild table into child table
-    InsertChildTable(&grandChildSt, &greatGrandChildSt); // Insert great-grandchild table into grandchild table
-
-
-    InsertSymbol("x", INT, VAR, &st);
-    InsertSymbol("y", CHAR, VAR, &st);
-    InsertSymbol("z", BOOLEAN, VAR, &childSt);
-    InsertSymbol("a", IDENTIFIER, VAR, &grandChildSt);
-    InsertSymbol("b", IDENTIFIER, VAR, &greatGrandChildSt); // Insert symbols into the symbol tables
-
-    int index = LocateSymbol("x", &greatGrandChildSt);
-    if (index != -1) {
-        printf("Symbol 'x' found at index %d\n", index);
-    } else {
-        printf("Symbol 'x' not found\n");
+void printTable(SymbolTable* st) {
+    // Print the symbol table
+    for (int i = 0; i < st->len; i++) {
+        printf("Name: %s, Type: %d, Kind: %d\n", st->table[i].name, st->table[i].type, st->table[i].kind);
     }
-
-    index = LocateSymbol("z", &st);
-    if (index != -1) {
-        printf("Symbol 'z' found at index %d\n", index);
-    } else {
-        printf("Symbol 'z' not found\n");
+    for (int i = 0; i < st->childCount; i++) {
+        SymbolTable* child = st->children[i];
+        printf("Child Table %d:\n", i);
+        printTable(child); // Recursively print child tables
     }
-
-    index = LocateSymbol("a", &greatGrandChildSt);
-    if (index != -1) {
-        printf("Symbol 'a' found at index %d\n", index);
-    } else {
-        printf("Symbol 'a' not found\n");
-    }
-
-    index = LocateSymbol("b", &st);
-    if (index != -1) {
-        printf("Symbol 'b' found at index %d\n", index);
-    } else {
-        printf("Symbol 'b' not found\n");
-    }
-
-    index = LocateSymbol("c", &greatGrandChildSt);
-    if (index != -1) {
-        printf("Symbol 'c' found at index %d\n", index);
-    } else {
-        printf("Symbol 'c' not found\n");
-    }
-    // Test the symbol table functions
-    Stack s;
-    InitStack(&s); // Initialize the stack
-    push(&s, "Hello");
-    push(&s, "World"); // Push strings onto the stack#
-    printf("Popped string: %s\n", pop(&s)); // Pop a string from the stack    
-    char* poppedStr = pop(&s);// Pop another string from the stack
-    printf("Popped string: %s\n", poppedStr); // Print the popped string
-    push(&s, "Test"); // Push another string onto the stack
-    push(&s, "int"); // Push another string onto the stack
-    push(&s, "method"); // Push another string onto the stack
-    
-    //print stack
-    for (int i = 0; i <= s.topIndex; i++) {
-        printf("Stack[%d]: %s\n", i, s.data[i]); // Print the stack contents
-    }
-    InsertSymbol(pop(&s), GetType(pop(&s)), GetKind(pop(&s)), &st); // Insert a symbol into the symbol table
-    index = LocateSymbol("Test", &st); // Locate the symbol in the symbol table
-    if (index != -1) {
-        printf("Symbol '%s' found at index %d\n", "Test", index);
-    } else {
-        printf("Symbol '%s' not found\n", "Test");
-    }
-    // print symbol table
-    for (int i = 0; i < st.len; i++) {
-        printf("Symbol %d: Name: %s, Type: %d, Kind: %d\n", i, st.table[i].name, st.table[i].type, st.table[i].kind);
-    }
-    printf("popped string: %s\n", poppedStr); // Print the popped string
-    
 }
+
+#ifndef COMPILER_H
+// void main() {
+//     SymbolTable st;
+//     SymbolTable childSt;
+//     SymbolTable grandChildSt;
+//     SymbolTable greatGrandChildSt;
+
+//     // Initialize the symbol tables
+//     InitSymbolTable(&st);
+//     InitSymbolTable(&childSt);
+//     InitSymbolTable(&grandChildSt);
+//     InitSymbolTable(&greatGrandChildSt);
+
+//     // Set parent-child relationships
+//     InsertChildTable(&st, &childSt);
+//     InsertChildTable(&childSt, &grandChildSt);
+//     InsertChildTable(&grandChildSt, &greatGrandChildSt);
+
+//     // Insert symbols into the symbol tables
+//     InsertSymbol("x", INTEGER, VAR, &st);
+//     InsertSymbol("y", CHAR, VAR, &st);
+//     InsertSymbol("z", BOOLEAN, VAR, &childSt);
+//     InsertSymbol("a", IDENTIFIER, VAR, &grandChildSt);
+//     InsertSymbol("b", IDENTIFIER, VAR, &greatGrandChildSt);
+
+//     // Locate symbols and print results
+//     int index = LocateSymbol("x", &greatGrandChildSt);
+//     if (index != -1) {
+//         printf("Symbol 'x' found at index %d\n", index);
+//     } else {
+//         printf("Symbol 'x' not found\n");
+//     }
+
+//     index = LocateSymbol("z", &st);
+//     if (index != -1) {
+//         printf("Symbol 'z' found at index %d\n", index);
+//     } else {
+//         printf("Symbol 'z' not found\n");
+//     }
+
+//     index = LocateSymbol("a", &greatGrandChildSt);
+//     if (index != -1) {
+//         printf("Symbol 'a' found at index %d\n", index);
+//     } else {
+//         printf("Symbol 'a' not found\n");
+//     }
+
+//     index = LocateSymbol("b", &st);
+//     if (index != -1) {
+//         printf("Symbol 'b' found at index %d\n", index);
+//     } else {
+//         printf("Symbol 'b' not found\n");
+//     }
+
+//     index = LocateSymbol("c", &greatGrandChildSt);
+//     if (index != -1) {
+//         printf("Symbol 'c' found at index %d\n", index);
+//     } else {
+//         printf("Symbol 'c' not found\n");
+//     }
+
+//     // Test the symbol table functions
+//     Stack s;
+//     InitStack(&s); // Initialize the stack
+//     push(&s, "Hello");
+//     push(&s, "World"); // Push strings onto the stack
+//     printf("Popped string: %s\n", pop(&s)); // Pop a string from the stack    
+//     char* poppedStr = pop(&s); // Pop another string from the stack
+//     printf("Popped string: %s\n", poppedStr); // Print the popped string
+//     push(&s, "Test"); // Push another string onto the stack
+//     push(&s, "int"); // Push another string onto the stack
+//     push(&s, "method"); // Push another string onto the stack
+    
+//     // Print stack
+//     for (int i = 0; i <= s.topIndex; i++) {
+//         printf("Stack[%d]: %s\n", i, s.data[i]); // Print the stack contents
+//     }
+//     InsertSymbol(pop(&s), GetType(pop(&s)), GetKind(pop(&s)), &st); // Insert a symbol into the symbol table
+//     index = LocateSymbol("Test", &st); // Locate the symbol in the symbol table
+//     if (index != -1) {
+//         printf("Symbol '%s' found at index %d\n", "Test", index);
+//     } else {
+//         printf("Symbol '%s' not found\n", "Test");
+//     }
+//     Symbol* symbol = GetSymbolGlobal("b", &st); // Get the symbol from the symbol table
+//     if (symbol != NULL) {
+//         printf("Symbol found: Name: %s, Type: %d, Kind: %d\n", symbol->name, symbol->type, symbol->kind); // Print the symbol details
+//     } else {
+//         printf("Symbol not found\n");
+//     }
+//     // Print symbol table
+//     for (int i = 0; i < st.len; i++) {
+//         printf("Symbol %d: Name: %s, Type: %d, Kind: %d\n", i, st.table[i].name, st.table[i].type, st.table[i].kind);
+//     }
+//     printf("Popped string: %s\n", poppedStr); // Print the popped string
+// }
 #endif

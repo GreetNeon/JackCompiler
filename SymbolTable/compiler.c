@@ -44,14 +44,14 @@ int StopCompiler ()
 
 
 #ifndef TEST_COMPILER
-int main ()
-{
-	InitCompiler ();
-	ParserInfo p = compile ("Pong");
-	#ifdef PrintError
-	PrintError (p);
-	#endif
-	StopCompiler ();
-	return 1;
-}
+// int main ()
+// {
+// 	InitCompiler ();
+// 	ParserInfo p = compile ("Pong");
+// 	#ifdef PrintError
+// 	PrintError (p);
+// 	#endif
+// 	StopCompiler ();
+// 	return 1;
+// }
 #endif

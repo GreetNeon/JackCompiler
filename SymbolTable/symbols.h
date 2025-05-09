@@ -15,7 +15,7 @@ typedef struct{
 } Symbol;
 
 typedef struct SymbolTable{
-    Symbol table[1280]; // Array of symbols
+    Symbol* table[1280]; // Array of symbols
     int len;            // Number of symbols in the table
     struct SymbolTable* parent; // Pointer to the parent symbol table (if any)
     struct SymbolTable* children[128]; // Array of child symbol tables
@@ -26,6 +26,7 @@ typedef struct{
     char data[1280][128]; // Array of strings to store symbols
     int topIndex; // Index of the top of the stack
 } Stack; // Define the Stack type
+
 
 Type GetType(char* type);
 Kind GetKind(char* kind);
@@ -40,6 +41,9 @@ int IndexParents(char* name, SymbolTable* st);
 int IndexChildren(char* name, SymbolTable* st);
 char* pop(Stack* s);
 void push(Stack* s, char* str);
+
+int indexStack(Stack* s, char* str);
+
 void InitStack(Stack* s);
 void printTable(SymbolTable* st);
 

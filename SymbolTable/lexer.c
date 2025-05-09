@@ -263,8 +263,10 @@ void StoreTokens(){
 
 Token GetNextToken ()
 { 
+  // Get the next token from the token list
   if (TokenListReady){
 	Token current = TokenList[CurrentToken];
+  printf("Current Token: %s\n", current.lx);
   CurrentToken++;
   return current;
 }
@@ -288,8 +290,11 @@ Token PeekNextToken ()
 int InitLexer (char* file_name)
 {
   strcpy(current_file, file_name);
+  printf("Current file: %s\n", current_file);
   input = fopen(file_name, "r");
+  printf("input: %p\n", input);
   if (input == NULL){
+    printf("Error: File not found\n");
     return 0;
   }
   TokenListReady = false;
@@ -313,9 +318,8 @@ int StopLexer ()
   LineCount = 0;
   CurrentToken = 0;
   TokenReady = false;
-
+  
   return 1;
-	return 0;
 }
 
 // do not remove the next line

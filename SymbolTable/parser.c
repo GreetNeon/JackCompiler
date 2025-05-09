@@ -28,6 +28,7 @@ int InitParser (char* file_name)
 	Token temp; temp.tp = ERR;
 	InitSymbolTable(&ProgramScope);
 	InitStack(&SymbolStack);
+	InitIdStack(&IdStack);
 	InitLexer(file_name);
 	pi.er = none;
 	pi.tk = temp;
@@ -51,6 +52,9 @@ void classDeclar(){
 		error(redecIdentifier, t);
 		return;
 	}
+	else{
+		pushId(&IdStack, t.lx, &ProgramScope, t); // Push the class name onto the stack
+	}
 	push(&SymbolStack, t.lx); // Push the class name onto the stack
 	GetNextToken(); // consume the token
 	t = PeekNextToken();
@@ -62,10 +66,6 @@ void classDeclar(){
 	//Insert the class name into the symbol table
 	char* id = pop(&SymbolStack); // Pop the class name from the stack
 	printf("Class name: %s\n", id);
-	if (IndexTable(id, &ProgramScope) != -1 && IndexParents(id, &ProgramScope) == -1){
-		error(redecIdentifier, t);
-		return;
-	}
 	InsertSymbol(id, IDENTIFIER, CLASS, &ProgramScope);
 	SymbolTable* ClassScope = (SymbolTable*)malloc(sizeof(SymbolTable));
 	InitSymbolTable(ClassScope); // Initialize the class scope
@@ -131,6 +131,9 @@ void classVarDeclar(SymbolTable* cs/*class scope*/){
 			error(redecIdentifier, t);
 			return;
 		}
+		else{
+			pushId(&IdStack, t.lx, cs, t); // Push the identifier name onto the stack
+		}
 		InsertSymbol(t.lx, GetType(type), GetKind(kind), cs); // Insert the symbol into the class scope
 		t = PeekNextToken();
 		if (strcmp(t.lx, ",") == 0){
@@ -142,7 +145,7 @@ void classVarDeclar(SymbolTable* cs/*class scope*/){
 	//print the current symbol table
 	printf("Symbol Table:\n");
 	for (int i = 0; i < cs->len; i++){
-		printf("Name: %s, Type: %d, Kind: %d\n", cs->table[i].name, cs->table[i].type, cs->table[i].kind);
+		printf("Name: %s, Type: %d, Kind: %d\n", cs->table[i]->name, cs->table[i]->type, cs->table[i]->kind);
 	}
 	t = PeekNextToken();
 	if (strcmp(t.lx, ";") != 0){
@@ -162,6 +165,7 @@ void type(SymbolTable* CurrentScope){
 	} else if (t.tp == ID){
 		//Impelemnt symbols with type ID
 		//
+		pushId(&IdStack, t.lx, CurrentScope, t); // Push the identifier name onto the stack
 		push(&SymbolStack, "identifier"); // Push the type onto the stack
 		GetNextToken(); // consume the token
 	} else {
@@ -173,6 +177,7 @@ void type(SymbolTable* CurrentScope){
 
 void subroutineDeclar(SymbolTable* cs/*class scope*/){
 	Token t = PeekNextToken();
+	Token idtk;
 	if (strcmp(t.lx, "constructor") == 0 || strcmp(t.lx, "function") == 0 || strcmp(t.lx, "method") == 0){
 		push(&SymbolStack, t.lx); // Push the kind onto the stack
 		GetNextToken(); // consume the token
@@ -192,6 +197,7 @@ void subroutineDeclar(SymbolTable* cs/*class scope*/){
 		error(idExpected, t);
 		return;
 	}
+	idtk = t; // Store the identifier token
 	GetNextToken(); // consume the token
 	push(&SymbolStack, t.lx); // Push the subroutine name onto the stack
 	t = PeekNextToken();
@@ -215,10 +221,11 @@ void subroutineDeclar(SymbolTable* cs/*class scope*/){
 	char* id = pop(&SymbolStack); // Pop the subroutine name from the stack
 	char* type = pop(&SymbolStack); // Pop the type from the stack
 	char* kind = pop(&SymbolStack); // Pop the kind from the stack
-	if (IndexTable(id, SubroutineScope) != -1 && IndexParents(id, SubroutineScope) != -1){
-		error(redecIdentifier, t);
+	if (IndexTable(id, SubroutineScope) != -1){
+		error(redecIdentifier, idtk);
 		return;
 	}
+	pushId(&IdStack, id, cs, idtk); // Push the subroutine name onto the stack
 	InsertSymbol(id, GetType(type), GetKind(kind), cs); // Insert the subroutine name into the subroutine scope
 	GetNextToken(); // consume the token
 	subroutineBody(SubroutineScope);
@@ -251,6 +258,7 @@ void paramList(SymbolTable* ss /*subroutine scope*/){
 			error(redecIdentifier, t);
 			return;
 		}
+		pushId(&IdStack, t.lx, ss, t); // Push the parameter name onto the stack
 		GetNextToken(); // consume the token
 		char* id = pop(&SymbolStack); // Pop the parameter name from the stack
 		char* type = pop(&SymbolStack); // Pop the type from the stack
@@ -330,16 +338,25 @@ void varDeclarStatement(SymbolTable* s/*scope*/){
 	if (strcmp(t.lx, "var") == 0){
 		GetNextToken(); // consume the token
 		type(&ProgramScope);
+		char* type = pop(&SymbolStack); // Pop the type from the stack
 		t = PeekNextToken();
 		if (t.tp != ID){
 			error(idExpected, t);
 			return;
 		}
+		push(&SymbolStack, t.lx); // Push the identifier name onto the stack
+		pushId(&IdStack, t.lx, s, t); // Push the identifier name onto the stack
 		GetNextToken(); // consume the token
 		while (1){
 			if (ErrorFlag == 0){
 				break;
 			}
+			char* id = pop(&SymbolStack); // Pop the identifier name from the stack
+			if (IndexTable(id, s) != -1){
+				error(redecIdentifier, t);
+				return;
+			}
+			InsertSymbol(id, GetType(type), VAR, s); // Insert the symbol into the class scope
 			t = PeekNextToken();
 			if (strcmp(t.lx, ",") == 0){
 				GetNextToken(); // consume the token
@@ -348,6 +365,8 @@ void varDeclarStatement(SymbolTable* s/*scope*/){
 					error(idExpected, t);
 					return;
 				}
+				push(&SymbolStack, t.lx); // Push the identifier name onto the stack
+				pushId(&IdStack, t.lx, s, t); // Push the identifier name onto the stack
 				GetNextToken(); // consume the token
 			} else {
 				break;
@@ -376,6 +395,7 @@ void letStatement(){
 			error(idExpected, t);
 			return;
 		}
+		pushId(&IdStack, t.lx, &ProgramScope, t); // Push the identifier name onto the stack
 		GetNextToken(); // consume the token
 		t = PeekNextToken();
 		if (strcmp(t.lx, "[") == 0){
@@ -562,6 +582,7 @@ void doStatement(){
 void subroutineCall(){
 	Token t = PeekNextToken();
 	if (t.tp == ID){
+		pushId(&IdStack, t.lx, &ProgramScope, t); // Push the identifier name onto the stack
 		GetNextToken(); // consume the token
 		t = PeekNextToken();
 		if (strcmp(t.lx, "(") == 0){
@@ -579,6 +600,7 @@ void subroutineCall(){
 				error(idExpected, t);
 				return;
 			}
+			pushId(&IdStack, t.lx, &ProgramScope, t); // Push the identifier name onto the stack
 			t = PeekNextToken();
 			if (strcmp(t.lx, "(") == 0){
 				GetNextToken(); // consume the token
@@ -763,6 +785,7 @@ void Operand(){
 		return;
 	// identifier [.identifier] [ [expression] | (expressionList) ]
 	} else if (t.tp == ID){
+		pushId(&IdStack, t.lx, &ProgramScope, t); // Push the identifier name onto the stack
 		GetNextToken(); // consume the token
 		//printf("Operand identifier %s\n", t.lx);
 		// Can be a variable or a function call or indexing
@@ -796,6 +819,7 @@ void Operand(){
 					error(idExpected, t);
 					return;
 				}
+				pushId(&IdStack, t.lx, &ProgramScope, t); // Push the identifier name onto the stack
 				t = PeekNextToken();
 				if (strcmp(t.lx, "(") == 0){
 					GetNextToken(); // consume the token
@@ -864,6 +888,7 @@ ParserInfo Parse ()
 	//printf("Parse current token %s\n", t.lx);
 	if (t.tp == ERR || t.tp == EOFile){
 		error(lexerErr, t);
+		printf("Error in lexer\n");
 		return pi;
 	}
 	while (1){
@@ -901,26 +926,25 @@ ParserInfo Parse ()
 	printf("Parse returns: %d with tkn: %s ln: %d\n", pi.er, pi.tk.lx, pi.tk.ln);
 	//print all symbols in all scopes
 	for (int i = 0; i < ProgramScope.len; i++){
-		printf("Name: %s, Type: %d, Kind: %d\n", ProgramScope.table[i].name, ProgramScope.table[i].type, ProgramScope.table[i].kind);
+		printf("Name: %s, Type: %d, Kind: %d\n", ProgramScope.table[i]->name, ProgramScope.table[i]->type, ProgramScope.table[i]->kind);
 	}
 	SymbolTable* current = &ProgramScope;
-	while (current->childCount > 0){
-		printTable(current);
-		for (int i = 0; i < current->childCount; i++){
-			if (current->childCount > 0){
-				current = current->children[i];
-			}
-			else{
-				break;
-			}
-		}
+	// while (current->childCount > 0){
+	// 	printTable(current);
+	// 	for (int i = 0; i < current->childCount; i++){
+	// 		if (current->childCount > 0){
+	// 			current = current->children[i];
+	// 		}
+	// 		else{
+	// 			break;
+	// 		}
+	// 	}
+	// }
+	// printTable(&ProgramScope); // Print the symbol table
+	//print all identifiers in the stack
+	for (int i = 0; i < IdStack.topIndex; i++){
+		printf("Id: %s\n", IdStack.data[i]->name);
 	}
-	printTable(&ProgramScope); // Print the symbol table
-
-
-
-	
-
 	return pi;
 }
 
@@ -930,17 +954,16 @@ int StopParser ()
 	StopLexer();
 	pi.er = none;
 	pi.tk = (Token){ERR, "", 0, 0, ""};
-	ErrorFlag = 1;
 	return 1;
 }
 
-#ifndef TEST_PARSER
-int main ()
-{
-	printf("Parser module\n");
-	InitParser("Output.jack");
-	ParserInfo pi = Parse();
-	StopParser();
-	return 0;
-}
+#ifndef TEST_COMPILER
+// int main ()
+// {
+// 	printf("Parser module\n");
+// 	InitParser("Output.jack");
+// 	ParserInfo pi = Parse();
+// 	StopParser();
+// 	return 0;
+// }
 #endif

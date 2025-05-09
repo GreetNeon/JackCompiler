@@ -62,11 +62,19 @@ void InsertSymbol(char* name, Type type, Kind kind, SymbolTable* st) {
         printf("Symbol table is full. Cannot insert new symbol.\n");
         return;
     }
+    Symbol* newSymbol = (Symbol*)malloc(sizeof(Symbol)); // Allocate memory for the new symbol
+    if (newSymbol == NULL) {
+        printf("Memory allocation failed. Cannot insert new symbol.\n");
+        return;
+    }
+
 
     // Insert the symbol into the symbol table
-    strcpy(st->table[st->len].name, name);
-    st->table[st->len].type = type;
-    st->table[st->len].kind = kind;
+    strcpy(newSymbol->name, name);
+    newSymbol->type = type;
+    newSymbol->kind = kind;
+    newSymbol->calls = 0; // Initialize calls to 0
+    st->table[st->len] = newSymbol; // Add the new symbol to the table
     st->len++;
 }
 
@@ -77,7 +85,7 @@ int IndexTable(char* name, SymbolTable* st) {
     }
     
     for (int i = 0; i < st->len; i++) {
-        if (strcmp(st->table[i].name, name) == 0) {
+        if (strcmp(st->table[i]->name, name) == 0) {
             return i; // Return the index of the symbol if found
         }
     }
@@ -155,7 +163,7 @@ Symbol* GetSymbol(char* name, SymbolTable* st) {
     }
     else if (IndexTable(name, st) != -1) {
         //printf("Symbol found in current table\n");
-        return &st->table[IndexTable(name, st)]; // Return the symbol if found
+        return st->table[IndexTable(name, st)]; // Return the symbol if found
     }
     return NULL; // Return NULL if the symbol is not found
 }
@@ -167,7 +175,7 @@ Symbol* GetSymbolGlobal(char* name, SymbolTable* st) {
     }
     int i = IndexTable(name, st);
     if (i != -1) {
-        return &st->table[i]; // Return the symbol if found
+        return st->table[i]; // Return the symbol if found
     }
     else if (IndexParents(name, st) != -1) {
         return GetSymbolGlobal(name, st->parent); // Search in the parent symbol table
@@ -197,6 +205,11 @@ void InitStack(Stack* s) {
     s->topIndex = -1; // Set the top index to -1 (empty stack)
 }
 
+void InitIdStack(IdentifierStack* s) {
+    // Initialize the identifier stack
+    s->topIndex = -1; // Set the top index to -1 (empty stack)
+}
+
 void push(Stack* s, char* str) {
     // Push a string onto the stack
     if (s->topIndex >= 127) {
@@ -220,10 +233,70 @@ char* pop(Stack* s) {
     return temp; // Return the popped string
 }
 
+void pushId(IdentifierStack* s, char* str, SymbolTable* st, Token t) {
+    // Push an identifier onto the identifier stack
+    if (s->topIndex >= 1279) {
+        printf("Identifier stack overflow. Cannot push new identifier.\n");
+        return;
+    }
+    // Check if the identifier already exists in the stack
+    int idx = indexIdStack(s, str, st);
+    if (idx != -1) {
+        //printf("%s already exists in the stack.\n", str);
+        // Check if the identifier is in the same scope
+        //printf("Identifier: %s, Scope: %p, Stack Scope: %p\n", str, st, s->data[idx]->scope);
+        return; // Return if the identifier already exists
+    }
+    IdentifierStrct* id = (IdentifierStrct*)malloc(sizeof(IdentifierStrct)); // Allocate memory for the identifier
+    strcpy(id->name, str); // Copy the identifier name
+    id->scope = st; // Set the scope of the identifier
+    id->token = t; // Set the token of the identifier
+    s->topIndex++;
+    s->data[s->topIndex] = id; // Push the identifier onto the stack
+}
+IdentifierStrct* popId(IdentifierStack* s) {
+    // Pop an identifier from the identifier stack
+    if (s->topIndex < 0) {
+        printf("Identifier stack underflow. Cannot pop identifier.\n");
+        return NULL; // Return null character if the stack is empty
+    }
+    IdentifierStrct* temp = (IdentifierStrct*)malloc(sizeof(IdentifierStrct)); // Allocate memory for the popped identifier
+    temp = s->data[s->topIndex]; // Get the top identifier
+    s->data[s->topIndex] = NULL; // Clear the top identifier
+    s->topIndex--; // Decrease the top index
+    return temp; // Return the popped identifier name
+}
+
+// Function to check if a string is in the stack
+int indexStack(Stack* s, char* str) {
+    // Check if the stack is empty
+    if (s->topIndex < 0) {
+        return -1; // Return -1 if the stack is empty
+    }
+    for(int i = 0; i <= s->topIndex; i++) {
+        if (strcmp(s->data[i], str) == 0) {
+            return i; // Return the index if the string is found
+        }
+    }
+    return -1; // Return -1 if the string is not found
+}
+
+int indexIdStack(IdentifierStack* s, char* str, SymbolTable* st) {
+    // Check if the identifier stack is empty
+    if (s->topIndex < 0) {
+        return -1; // Return -1 if the stack is empty
+    }
+    for(int i = 0; i <= s->topIndex; i++) {
+        if (strcmp(s->data[i]->name, str) == 0 && s->data[i]->scope == st) {
+            return i; // Return the index if the identifier is found
+        }
+    }
+    return -1; // Return -1 if the identifier is not found
+}
 void printTable(SymbolTable* st) {
     // Print the symbol table
     for (int i = 0; i < st->len; i++) {
-        printf("Name: %s, Type: %d, Kind: %d\n", st->table[i].name, st->table[i].type, st->table[i].kind);
+        printf("Name: %s, Type: %d, Kind: %d\n", st->table[i]->name, st->table[i]->type, st->table[i]->kind);
     }
     for (int i = 0; i < st->childCount; i++) {
         SymbolTable* child = st->children[i];

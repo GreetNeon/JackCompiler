@@ -11,6 +11,7 @@
 
 // remove this before releasing template
 #define NumberTestFiles 20
+#define TEST_COMPILER
 char* JsonStr;
 
 char* ErrorString (SyntaxErrors e);

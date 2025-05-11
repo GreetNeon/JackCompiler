@@ -799,11 +799,11 @@ void Operand(SymbolTable* s/*scope*/){
 		//printf("Operand identifier %s\n", t.lx);
 		// Can be a variable or a function call or indexing
 		t = PeekNextToken();
-		if (t.lx == "."){
-			pushId(&IdStack, temp.lx, s, temp, 0, 0); // Push the identifier name onto the stack
+		if (strcmp(t.lx, ".") == 0){
+			pushId(&IdStack, temp.lx, s, temp, 0, 1); // Push the identifier name onto the stack
 		}
 		else{
-			pushId(&IdStack, temp.lx, s, temp, 0, 1); // Push the identifier name onto the stack
+			pushId(&IdStack, temp.lx, s, temp, 0, 0); // Push the identifier name onto the stack
 		}
 		if (t.tp == SYMBOL){
 			//printf("Operand Id then symbol %s\n", t.lx);

@@ -45,26 +45,84 @@ int InitCompiler ()
 
 IdentifierStrct* compareId(SymbolTable* st) {
 	//for id in id stack check if it exists in current scope or parent scope
-	IdStack = cleanIdStack(&IdStack);
+	IdentifierStrct* id[3];
+	int IdxParent, IdxTable, IdxProgram, IdxSpId;
 	if (st == NULL) {
 		return NULL;
 	}
 	for (int i = 0; i <= IdStack.topIndex; i++) {
+		//define id[0] as the first identifier and id[1] as the second identifier
+		id[0] = IdStack.data[i][0]; //identifier if id[1] null, or class
+		id[1] = IdStack.data[i][1]; //if id[0] is a class, id[1] is the identifier
+		//Ensire id[0] exists in the symbol table
+		IdxTable = IndexTable(id[0]->name, id[0]->scope);
+		IdxParent = IndexParents(id[0]->name, id[0]->scope);
+		IdxProgram = IndexTable(id[0]->name, &ProgramScope);
 		//check if id is a pair
-		if (IdStack.data[i][1] == NULL) {
+		if (id[1] == NULL) {
 			//check if id exists in current scope or parent scope
-			if (indexIdStack(st, IdStack.data[i][0]->name, st) == -1) {
-				return IdStack.data[i][0];
+			// printf("Id: %s, IdxTable: %d, IdxParent: %d, scope:%p, ProgScope:%d\n", id[0]->name, IdxTable, IdxParent, id[0]->scope, IdxProgram);
+			if (IdxTable == -1 && IdxParent == -1) {
+				//printf("First hurdle\n");
+				return id[0];
 			}
+			
+			continue;
+		//If id pair
 		} else {
-			//check if id[0] exists in special id stack
-			if (indexSpIdStack(&SpIdStack, IdStack.data[i][0]->name, st) == -1) {
-				return IdStack.data[i][0];
-			} else {
-				//check if id[1] exists in special id stack
-				if (indexSpIdStack(&SpIdStack, IdStack.data[i][1]->name, st) == -1) {
-					return IdStack.data[i][1];
+			//printf("Id0: %s, line:%d, file:%s, Id1: %s, line:%d, IdxTable: %d, IdxParent: %d\n", id[0]->name, id[0]->token.ln, id[0]->token.fl, id[1]->name, id[1]->token.ln, IdxTable, IdxParent);
+			//check if id exists in current scope or parent scope
+			if (IdxTable == -1 && IdxParent == -1) {
+				return id[0];
+			}
+			if (IdxProgram != -1) {
+				//the class is being accessed directly
+				//check if id[1] exists in the child scope
+				if (IndexTable(id[1]->name, ProgramScope.children[IdxProgram]) != -1) {
+					//If it exists reutrn null
+					continue;
+				} else {
+					//if not, return id[1]
+					return id[1];
 				}
+			}
+			//If the class is not being accessed directly
+			//check if id[0] exists in the special id stack
+			else{
+				//printf("Right here\n");
+				IdxSpId = indexSpIdStack(&SpIdStack, id[0]->name, id[0]->scope);
+				SymbolTable* temp = id[0]->scope;
+				while(IdxSpId == -1 && temp->parent != NULL) {
+					//check if id[0] exists in the special id stack
+					IdxSpId = indexSpIdStack(&SpIdStack, id[0]->name, temp->parent);
+					temp = temp->parent;
+				}
+				// printf("IdxSpId: %d\n", IdxSpId);
+				// //print special id stack
+				// for (int j = 0; j <= SpIdStack.topIndex; j++) {
+				// 	printf("SpIdStack[%d]: id:%s type:%s\n", j, SpIdStack.data[j][0]->name, SpIdStack.data[j][1]->name);
+				// }
+				if (IdxSpId != -1) {
+					//check if the type is defined in program scope
+					IdxProgram = IndexTable(SpIdStack.data[IdxSpId][1]->name, &ProgramScope);
+					//if it is, check that id[1] exists in the child scope
+					if (IdxProgram != -1) {
+						//check if id[1] exists in the child scope
+						if (IndexTable(id[1]->name, ProgramScope.children[IdxProgram]) != -1) {
+							//If it exists return null
+							continue;
+						} else {
+							//if not, return id[1]
+							return id[1];
+						}
+					} else {
+						//if not, return id[0]
+						return SpIdStack.data[IdxSpId][1];
+					}
+				} else {
+					return id[1];
+				}
+				
 			}
 		}
 	}
@@ -91,7 +149,6 @@ ParserInfo compile (char* dir_name)
 	struct dirent *entry;
 	struct dirent *preentry;
 	// Print all files in parent directory
-	preentry = readdir(predir);
 	//printf("first file in parent directory: %s\n", preentry->d_name);
 	while((preentry = readdir(predir)) != NULL) {
 		// check if it's a jack file
@@ -158,18 +215,18 @@ ParserInfo compile (char* dir_name)
 	// }
 	IdentifierStrct* err = compareId(&ProgramScope);
 	if (err == NULL){
-		printf("No undeclared identifiers\n");
+		//printf("No undeclared identifiers\n");
 	} else {
-		printf("Undeclared identifier: %s, Scope: %s\n", err->name, err->scope->table[0]->name);
+		//printf("Undeclared identifier: %s, Scope: %s\n", err->name, err->scope->table[0]->name);
 		p.er = undecIdentifier;
 		p.tk = err->token;
 	}
 	//print error
-	printf("Error type: %d, line: %i,token: %s\n", p.er, p.tk.ln, p.tk.lx);
-	printf("Symbol Table:\n");
-			for (int i = 0; i < ProgramScope.len; i++) {
-				printf("Name: %s, Type: %d, Kind: %d\n", ProgramScope.table[i]->name, ProgramScope.table[i]->type, ProgramScope.table[i]->kind);
-			}
+	//printf("Error type: %d, line: %i,token: %s\n", p.er, p.tk.ln, p.tk.lx);
+	// printf("Symbol Table:\n");
+	// 		for (int i = 0; i < ProgramScope.len; i++) {
+	// 			printf("Name: %s, Type: %d, Kind: %d\n", ProgramScope.table[i]->name, ProgramScope.table[i]->type, ProgramScope.table[i]->kind);
+	// 		}
 	return p;
 }
 

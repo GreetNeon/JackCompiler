@@ -295,14 +295,13 @@ char* pop(Stack* s) {
 
 void pushId(IdentifierStack* s, char* str, SymbolTable* st, Token t, int ArrIdx, int check) {
     // Push an identifier onto the identifier stack
-    char accepted[10][20] = {"Array", "String"};
     if (s->topIndex >= 1279) {
         printf("Identifier stack overflow. Cannot push new identifier.\n");
         return;
     }
     // Check if the identifier already exists in the stack
     int idx = indexIdStack(s, str, st);
-    if (idx != -1 || strcmp(str, "Array") == 0 || strcmp(str, "String") == 0 || check == 0) {
+    if (idx != -1 && check == 0) {
         //printf("%s already exists in the stack.\n", str);
         // Check if the identifier is in the same scope
         //printf("Identifier: %s, Scope: %p, Stack Scope: %p\n", str, st, s->data[idx]->scope);

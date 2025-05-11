@@ -186,6 +186,63 @@ Symbol* GetSymbolGlobal(char* name, SymbolTable* st) {
     }
     return NULL; // Return NULL if the symbol is not found
 }
+//Get the symbol table a symbol belongs to
+SymbolTable* GetSymbolTable(Symbol* s, SymbolTable* st) {
+    // Search for the symbol in the symbol table
+    if (st == NULL || s == NULL) {
+        return NULL; // Return NULL if the symbol table is NULL
+    }
+    for (int i = 0; i < st->len; i++) {
+        if (st->table[i] == s) {
+            return st; // Return the symbol table if the symbol is found
+        }
+    }
+    // Search in the parent symbol table
+    if (st->parent != NULL) {
+        SymbolTable* parentTable = GetSymbolTable(s, st->parent);
+        if (parentTable != NULL) {
+            return parentTable; // Return the parent symbol table if found
+        }
+    }
+    return NULL; // Return NULL if the symbol is not found
+}
+
+void pushSpId(SpecialIdStack* s, char* str, SymbolTable* st, Token t, int ArrIdx) {
+    // Push a special identifier onto the special identifier stack
+    if (s->topIndex >= 1279) {
+        printf("Special identifier stack overflow. Cannot push new identifier.\n");
+        return;
+    }
+    // Check if the identifier already exists in the stack
+    //printf("Pushing special identifier: %s\n", str);
+    IdentifierStrct* id = (IdentifierStrct*)malloc(sizeof(IdentifierStrct)); // Allocate memory for the special identifier
+    strcpy(id->name, str); // Copy the special identifier name
+    id->scope = st; // Set the scope of the special identifier
+    id->token = t; // Set the token of the special identifier
+    if (ArrIdx == 0){
+        s->topIndex++;
+    }
+    s->data[s->topIndex][ArrIdx] = id; // Push the special identifier onto the stack
+}
+
+void initSpIdStack(SpecialIdStack* s) {
+    // Initialize the special identifier stack
+    s->topIndex = -1; // Set the top index to -1 (empty stack)
+
+}
+
+int indexSpIdStack(SpecialIdStack* s, char* str, SymbolTable* st) {
+    // Check if the special identifier stack is empty
+    if (s->topIndex < 0) {
+        return -1; // Return -1 if the stack is empty
+    }
+    for(int i = 0; i <= s->topIndex; i++) {
+        if (strcmp(s->data[i][0]->name, str) == 0 && s->data[i][0]->scope == st) {
+            return i; // Return the index if the special identifier is found
+        }
+    }
+    return -1; // Return -1 if the special identifier is not found
+}
 
 // Function to insert a child symbol table into a parent symbol table
 void InsertChildTable(SymbolTable* parent, SymbolTable* child) {
@@ -208,6 +265,9 @@ void InitStack(Stack* s) {
 void InitIdStack(IdentifierStack* s) {
     // Initialize the identifier stack
     s->topIndex = -1; // Set the top index to -1 (empty stack)
+    for (int i = 0; i < 1280; i++) {
+        s->data[i][1] = NULL; // Initialize all identifier pointers to NULL
+    }
 }
 
 void push(Stack* s, char* str) {
@@ -233,7 +293,7 @@ char* pop(Stack* s) {
     return temp; // Return the popped string
 }
 
-void pushId(IdentifierStack* s, char* str, SymbolTable* st, Token t) {
+void pushId(IdentifierStack* s, char* str, SymbolTable* st, Token t, int ArrIdx, int check) {
     // Push an identifier onto the identifier stack
     char accepted[10][20] = {"Array", "String"};
     if (s->topIndex >= 1279) {
@@ -242,29 +302,31 @@ void pushId(IdentifierStack* s, char* str, SymbolTable* st, Token t) {
     }
     // Check if the identifier already exists in the stack
     int idx = indexIdStack(s, str, st);
-    if (idx != -1 || strcmp(str, "Array") == 0 || strcmp(str, "String") == 0) {
+    if (idx != -1 || strcmp(str, "Array") == 0 || strcmp(str, "String") == 0 || check == 0) {
         //printf("%s already exists in the stack.\n", str);
         // Check if the identifier is in the same scope
         //printf("Identifier: %s, Scope: %p, Stack Scope: %p\n", str, st, s->data[idx]->scope);
         return; // Return if the identifier already exists
     }
-    printf("Pushing identifier: %s\n", str);
+    //printf("Pushing identifier: %s\n", str);
     IdentifierStrct* id = (IdentifierStrct*)malloc(sizeof(IdentifierStrct)); // Allocate memory for the identifier
     strcpy(id->name, str); // Copy the identifier name
     id->scope = st; // Set the scope of the identifier
     id->token = t; // Set the token of the identifier
-    s->topIndex++;
-    s->data[s->topIndex] = id; // Push the identifier onto the stack
+    if (ArrIdx == 0){
+        s->topIndex++;
+    }
+    s->data[s->topIndex][ArrIdx] = id; // Push the identifier onto the stack
 }
-IdentifierStrct* popId(IdentifierStack* s) {
+IdentifierStrct* popId(IdentifierStack* s, int idx) {
     // Pop an identifier from the identifier stack
     if (s->topIndex < 0) {
         printf("Identifier stack underflow. Cannot pop identifier.\n");
         return NULL; // Return null character if the stack is empty
     }
     IdentifierStrct* temp = (IdentifierStrct*)malloc(sizeof(IdentifierStrct)); // Allocate memory for the popped identifier
-    temp = s->data[s->topIndex]; // Get the top identifier
-    s->data[s->topIndex] = NULL; // Clear the top identifier
+    temp = s->data[s->topIndex][idx]; // Get the top identifier
+    s->data[s->topIndex][idx] = NULL; // Clear the top identifier
     s->topIndex--; // Decrease the top index
     return temp; // Return the popped identifier name
 }
@@ -289,12 +351,14 @@ int indexIdStack(IdentifierStack* s, char* str, SymbolTable* st) {
         return -1; // Return -1 if the stack is empty
     }
     for(int i = 0; i <= s->topIndex; i++) {
-        if (strcmp(s->data[i]->name, str) == 0 && s->data[i]->scope == st) {
+        if (strcmp(s->data[i][0]->name, str) == 0 && s->data[i][0]->scope == st) {
             return i; // Return the index if the identifier is found
         }
     }
     return -1; // Return -1 if the identifier is not found
 }
+
+
 void printTable(SymbolTable* st) {
     // Print the symbol table
     for (int i = 0; i < st->len; i++) {

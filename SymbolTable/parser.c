@@ -26,9 +26,7 @@ void error (SyntaxErrors err, Token t){
 int InitParser (char* file_name)
 {
 	Token temp; temp.tp = ERR;
-	InitSymbolTable(&ProgramScope);
 	InitStack(&SymbolStack);
-	InitIdStack(&IdStack);
 	InitLexer(file_name);
 	pi.er = none;
 	pi.tk = temp;
@@ -53,7 +51,7 @@ void classDeclar(){
 		return;
 	}
 	else{
-		pushId(&IdStack, t.lx, &ProgramScope, t); // Push the class name onto the stack
+		pushId(&IdStack, t.lx, &ProgramScope, t, 0, 1); // Push the class name onto the stack
 	}
 	push(&SymbolStack, t.lx); // Push the class name onto the stack
 	GetNextToken(); // consume the token
@@ -132,7 +130,7 @@ void classVarDeclar(SymbolTable* cs/*class scope*/){
 			return;
 		}
 		else{
-			pushId(&IdStack, t.lx, cs, t); // Push the identifier name onto the stack
+			pushId(&IdStack, t.lx, cs, t, 0, 1); // Push the identifier name onto the stack
 		}
 		InsertSymbol(t.lx, GetType(type), GetKind(kind), cs); // Insert the symbol into the class scope
 		t = PeekNextToken();
@@ -159,16 +157,23 @@ void classVarDeclar(SymbolTable* cs/*class scope*/){
 
 void type(SymbolTable* CurrentScope){
 	Token t = PeekNextToken();
+	Token idtk;
 	if (strcmp(t.lx, "int") == 0 || strcmp(t.lx, "char") == 0 || strcmp(t.lx, "boolean") == 0){
 		push(&SymbolStack, t.lx); // Push the type onto the stack
 		GetNextToken(); // consume the token
 	} else if (t.tp == ID){
 		//Impelemnt symbols with type ID
 		//
-		pushId(&IdStack, t.lx, CurrentScope, t); // Push the identifier name onto the stack
+		pushId(&IdStack, t.lx, CurrentScope, t, 0, 1); // Push the identifier name onto the stack
 		push(&SymbolStack, "identifier"); // Push the type onto the stack
 		GetNextToken(); // consume the token
-	} else {
+		idtk = t; // Store the identifier token
+		t = PeekNextToken();
+		if (t.tp == ID){
+			pushSpId(&SpIdStack, t.lx, CurrentScope, t, 0); // Push the identifier name onto the stack}
+			pushSpId(&SpIdStack, idtk.lx, CurrentScope, idtk, 1); // Push the identifier name onto the stack
+		}
+		} else {
 		error(illegalType, t);
 		return;
 	}
@@ -225,7 +230,7 @@ void subroutineDeclar(SymbolTable* cs/*class scope*/){
 		error(redecIdentifier, idtk);
 		return;
 	}
-	pushId(&IdStack, id, cs, idtk); // Push the subroutine name onto the stack
+	pushId(&IdStack, id, cs, idtk, 0, 1); // Push the subroutine name onto the stack
 	InsertSymbol(id, GetType(type), GetKind(kind), cs); // Insert the subroutine name into the subroutine scope
 	GetNextToken(); // consume the token
 	//printf("%p\n", SubroutineScope);
@@ -259,7 +264,7 @@ void paramList(SymbolTable* ss /*subroutine scope*/){
 			error(redecIdentifier, t);
 			return;
 		}
-		pushId(&IdStack, t.lx, ss, t); // Push the parameter name onto the stack
+		pushId(&IdStack, t.lx, ss, t, 0, 1); // Push the parameter name onto the stack
 		GetNextToken(); // consume the token
 		char* id = pop(&SymbolStack); // Pop the parameter name from the stack
 		char* type = pop(&SymbolStack); // Pop the type from the stack
@@ -347,7 +352,7 @@ void varDeclarStatement(SymbolTable* s/*scope*/){
 		}
 		//printf("%p\n", s);
 		push(&SymbolStack, t.lx); // Push the identifier name onto the stack
-		pushId(&IdStack, t.lx, s, t); // Push the identifier name onto the stack
+		pushId(&IdStack, t.lx, s, t, 0, 1); // Push the identifier name onto the stack
 		//printf("Pushed identifier: %s scope: %p\n", t.lx, s);
 		GetNextToken(); // consume the token
 		while (1){
@@ -369,7 +374,7 @@ void varDeclarStatement(SymbolTable* s/*scope*/){
 					return;
 				}
 				push(&SymbolStack, t.lx); // Push the identifier name onto the stack
-				pushId(&IdStack, t.lx, s, t); // Push the identifier name onto the stack
+				pushId(&IdStack, t.lx, s, t, 0, 1); // Push the identifier name onto the stack
 				GetNextToken(); // consume the token
 			} else {
 				break;
@@ -398,7 +403,7 @@ void letStatement(SymbolTable* s/*scope*/){
 			error(idExpected, t);
 			return;
 		}
-		pushId(&IdStack, t.lx, s, t); // Push the identifier name onto the stack
+		pushId(&IdStack, t.lx, s, t, 0, 1); // Push the identifier name onto the stack
 		GetNextToken(); // consume the token
 		t = PeekNextToken();
 		if (strcmp(t.lx, "[") == 0){
@@ -585,7 +590,7 @@ void doStatement(SymbolTable* s/*scope*/){
 void subroutineCall(SymbolTable* s/*scope*/){
 	Token t = PeekNextToken();
 	if (t.tp == ID){
-		pushId(&IdStack, t.lx, s, t); // Push the identifier name onto the stack
+		pushId(&IdStack, t.lx, s, t, 0, 1); // Push the identifier name onto the stack
 		GetNextToken(); // consume the token
 		t = PeekNextToken();
 		if (strcmp(t.lx, "(") == 0){
@@ -603,7 +608,7 @@ void subroutineCall(SymbolTable* s/*scope*/){
 				error(idExpected, t);
 				return;
 			}
-			pushId(&IdStack, t.lx, s, t); // Push the identifier name onto the stack
+			pushId(&IdStack, t.lx, s, t, 1, 1); // Push the identifier name onto the stack
 			t = PeekNextToken();
 			if (strcmp(t.lx, "(") == 0){
 				GetNextToken(); // consume the token
@@ -780,6 +785,7 @@ void factor(SymbolTable* s/*scope*/){
 
 void Operand(SymbolTable* s/*scope*/){
 	Token t = PeekNextToken();
+	Token temp;
 	//printf("Operand current token %s\n", t.lx);
 	// integerConstant
 	if (t.tp == INT){
@@ -788,11 +794,17 @@ void Operand(SymbolTable* s/*scope*/){
 		return;
 	// identifier [.identifier] [ [expression] | (expressionList) ]
 	} else if (t.tp == ID){
-		pushId(&IdStack, t.lx, s, t); // Push the identifier name onto the stack
+		temp = t;
 		GetNextToken(); // consume the token
 		//printf("Operand identifier %s\n", t.lx);
 		// Can be a variable or a function call or indexing
 		t = PeekNextToken();
+		if (t.lx == "."){
+			pushId(&IdStack, temp.lx, s, temp, 0, 0); // Push the identifier name onto the stack
+		}
+		else{
+			pushId(&IdStack, temp.lx, s, temp, 0, 1); // Push the identifier name onto the stack
+		}
 		if (t.tp == SYMBOL){
 			//printf("Operand Id then symbol %s\n", t.lx);
 			// Check for indexing
@@ -822,7 +834,7 @@ void Operand(SymbolTable* s/*scope*/){
 					error(idExpected, t);
 					return;
 				}
-				pushId(&IdStack, t.lx, s, t); // Push the identifier name onto the stack
+				pushId(&IdStack, t.lx, s, t, 1, 0); // Push the identifier name onto the stack
 				t = PeekNextToken();
 				if (strcmp(t.lx, "(") == 0){
 					GetNextToken(); // consume the token

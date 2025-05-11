@@ -6,11 +6,12 @@
 typedef enum {STATIC, FIELD, ARG, VAR, METHOD, FUNCTION, CONSTRUCTOR, CLASS} Kind; // Define the kinds of symbols
 typedef enum {INTEGER, CHAR, BOOLEAN, ARRAY, IDENTIFIER} Type; // Define the types of symbols
 
+
 typedef struct{
     char name[128];
     Type type;
     Kind kind;
-    char IDNAME[128]; // Identifier name
+    char ID[128]; // Identifier name
     int calls;
 } Symbol;
 
@@ -35,6 +36,7 @@ void InsertSymbol(char* name, Type type, Kind kind, SymbolTable* st);
 int LocateSymbol(char* name, SymbolTable* st);
 Symbol* GetSymbol(char* name, SymbolTable* st);
 Symbol* GetSymbolGlobal(char* name, SymbolTable* st);
+SymbolTable* GetSymbolTable(Symbol* s, SymbolTable* st);
 int IndexTable(char* name, SymbolTable* st);
 void InsertChildTable(SymbolTable* parent, SymbolTable* child);
 int IndexParents(char* name, SymbolTable* st);

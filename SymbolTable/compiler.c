@@ -26,26 +26,48 @@ Date Work Commenced:
 //3. cry urself to sleep
 //4. with identifier pairs, try to find first identifier, then find the second identifier in the child scope
 
-
+//Logic for compareId Function:
+//If Not an id pair, check if the id exists in the current scope or parent scope
+//if it is an id pair, check if id[0] is in the special id stack, ensure it is in the same or parent scope(change pushspid to set a scope where it was pushed)
+//if it is not in the special id stack, check for id[0] in the program scope, if its not there then undeclared error
+//if it is there, index program scope children and check if id[1] is in the child scope, if not undeclared error
+//if it is in the special id stack, check if spid[1] is in the program scope, if not undeclared error
+//if it is in the program scope, index program scope children and check if id[1] is in the child scope, if not undeclared error
+//if no error return null
 
 int InitCompiler ()
 {
+	InitSymbolTable(&ProgramScope);
+	InitIdStack(&IdStack);
+	initSpIdStack(&SpIdStack);
 	return 1;
 }
 
 IdentifierStrct* compareId(SymbolTable* st) {
 	//for id in id stack check if it exists in current scope or parent scope
+	IdStack = cleanIdStack(&IdStack);
 	if (st == NULL) {
 		return NULL;
 	}
-	// for id in id stack
-	for(int i = 0; i <= IdStack.topIndex; i++) {
-		if (IndexTable(IdStack.data[i]->name, IdStack.data[i]->scope) == -1 && IndexParents(IdStack.data[i]->name, IdStack.data[i]->scope) == -1) {
-			return IdStack.data[i]; // Return 0 if the symbol is found in the current table
+	for (int i = 0; i <= IdStack.topIndex; i++) {
+		//check if id is a pair
+		if (IdStack.data[i][1] == NULL) {
+			//check if id exists in current scope or parent scope
+			if (indexIdStack(st, IdStack.data[i][0]->name, st) == -1) {
+				return IdStack.data[i][0];
+			}
+		} else {
+			//check if id[0] exists in special id stack
+			if (indexSpIdStack(&SpIdStack, IdStack.data[i][0]->name, st) == -1) {
+				return IdStack.data[i][0];
+			} else {
+				//check if id[1] exists in special id stack
+				if (indexSpIdStack(&SpIdStack, IdStack.data[i][1]->name, st) == -1) {
+					return IdStack.data[i][1];
+				}
+			}
 		}
-
 	}
-
 	return NULL;
 }
 
@@ -56,7 +78,11 @@ ParserInfo compile (char* dir_name)
 	// open the directory
 	DIR *dir, *predir;
 	dir = opendir(dir_name);
-	predir = opendir(".");
+	char working_dir[100];
+	strcpy(working_dir, dir_name);
+	strcat(working_dir, "/..");
+	predir = opendir(working_dir);
+	// check if the directory is opened successfully
 	if (dir == NULL || predir == NULL) {
 		perror("Unable to open directory");
 		p.er = lexerErr;
@@ -64,8 +90,37 @@ ParserInfo compile (char* dir_name)
 	}
 	struct dirent *entry;
 	struct dirent *preentry;
-	//compille all files in the same directory as the directory given
+	// Print all files in parent directory
+	preentry = readdir(predir);
+	//printf("first file in parent directory: %s\n", preentry->d_name);
+	while((preentry = readdir(predir)) != NULL) {
+		// check if it's a jack file
+			char file_name[1000];
+			sprintf(file_name, "%s/%s", working_dir, preentry->d_name);
+			if (strstr(file_name, ".jack") == NULL) {
+				//printf("File: %s is not a jack file\n", file_name);
+				continue;
+			}
+			else {
+				//printf("File: %s is a jack file\n", file_name);
+			}
+			InitParser(file_name);
+			p = Parse();
+			StopParser();
+			if (p.er != none) {
+				// printf("Error in file: %s\n", file_name);
+				// printf("Error type: %d, line: %i,token: %s\n", p.er, p.tk.ln, p.tk.lx);
+				break;
+			}
 
+			
+	}
+	//compille all files in the same directory as the directory given
+	if (dir == NULL || predir == NULL) {
+		perror("Unable to open directory");
+		p.er = lexerErr;
+		return p;
+	}
 	while ((entry = readdir(dir)) != NULL) {
 		// check if it's a jack file
 			char file_name[1000];
@@ -74,9 +129,9 @@ ParserInfo compile (char* dir_name)
 				// printf("File: %s is not a jack file\n", file_name);
 				continue;
 			}
-			// else {
-			 	// printf("File: %s is a jack file\n", file_name);
-			// }
+			else {
+				//printf("File: %s is a jack file\n", file_name);
+			}
 			InitParser(file_name);
 			// printf("Current error: %d\n", p.er);
 			p = Parse();
@@ -92,14 +147,15 @@ ParserInfo compile (char* dir_name)
 	// close the directory
 	closedir(dir);
 	// print all symbols in all scopes
-	printf("Symbol Table:\n");
-	for (int i = 0; i < ProgramScope.len; i++) {
-		printf("Name: %s, Type: %d, Kind: %d\n", ProgramScope.table[i]->name, ProgramScope.table[i]->type, ProgramScope.table[i]->kind);
-	}
+
 	// print all identufiers in all scopes
-	for (int i = 0; i <= IdStack.topIndex; i++) {
-		printf("Identifier: %s, Scope: %s\n", IdStack.data[i]->name, IdStack.data[i]->scope->table[0]->name);
-	}
+	// printf("Identifiers:\n");
+	// for (int i = 0; i <= IdStack.topIndex; i++) {
+	// 	printf("Identifier: %s, Scope: %s\n", IdStack.data[i][0]->name, IdStack.data[i][0]->scope->table[0]->name);
+	// 	if (IdStack.data[i][1] != NULL){
+	// 		printf("Identifier: %s, Scope: %s\n", IdStack.data[i][1]->name, IdStack.data[i][1]->scope->table[0]->name);
+	// 	}
+	// }
 	IdentifierStrct* err = compareId(&ProgramScope);
 	if (err == NULL){
 		printf("No undeclared identifiers\n");
@@ -108,6 +164,12 @@ ParserInfo compile (char* dir_name)
 		p.er = undecIdentifier;
 		p.tk = err->token;
 	}
+	//print error
+	printf("Error type: %d, line: %i,token: %s\n", p.er, p.tk.ln, p.tk.lx);
+	printf("Symbol Table:\n");
+			for (int i = 0; i < ProgramScope.len; i++) {
+				printf("Name: %s, Type: %d, Kind: %d\n", ProgramScope.table[i]->name, ProgramScope.table[i]->type, ProgramScope.table[i]->kind);
+			}
 	return p;
 }
 
@@ -122,7 +184,8 @@ int StopCompiler ()
 		free(ProgramScope.table[i]);
 	}
 	for (int i = 0; i < IdStack.topIndex; i++) {
-		free(IdStack.data[i]);
+		free(IdStack.data[i][0]);
+		free(IdStack.data[i][1]);
 	}
 	IdStack.topIndex = -1;
 	for (int i = 0; i < SymbolStack.topIndex; i++) {

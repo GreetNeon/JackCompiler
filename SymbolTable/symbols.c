@@ -15,6 +15,7 @@ Date Work Commenced:27/04/25
 *************************************************************************/
 
 // To Run
+#include "lexer.h"
 #include "symbols.h"
 #include "parser.h"
 #include <string.h>

@@ -945,7 +945,7 @@ ParserInfo Parse ()
 	// for (int i = 0; i < ProgramScope.len; i++){
 	// 	//printf("Name: %s, Type: %d, Kind: %d\n", ProgramScope.table[i]->name, ProgramScope.table[i]->type, ProgramScope.table[i]->kind);
 	// }
-	SymbolTable* current = &ProgramScope;
+	//./comSymbolTable* current = &ProgramScope;
 	// while (current->childCount > 0){
 	// 	printTable(current);
 	// 	for (int i = 0; i < current->childCount; i++){

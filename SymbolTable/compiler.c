@@ -8,15 +8,17 @@ I confirm that the following code has been developed and written by me and it is
 I also confirm that I have not copied any parts of this program from another person or any other source or facilitated someone to copy this program from me.
 I confirm that I will not publish the program online or share it with anyone without permission of the module leader.
 
-Student Name:
-Student ID:
-Email:
-Date Work Commenced:
+Student Name:Teon Green
+Student ID:201734612
+Email:sc23tg@leeds.ac.uk
+Date Work Commenced:27/04/25
 *************************************************************************/
 #include <stdio.h>
 #include <dirent.h>
 #include <string.h>
 #include <stdlib.h>
+#include "symbols.h"
+#include "parser.h"
 #include "compiler.h"
 #define COMPILER_C
 
@@ -135,8 +137,10 @@ ParserInfo compile (char* dir_name)
 	// write your code below
 	// open the directory
 	DIR *dir, *predir;
+	char working_dir[1000];
+	char file_name[1280];
 	dir = opendir(dir_name);
-	char working_dir[100];
+	
 	strcpy(working_dir, dir_name);
 	strcat(working_dir, "/..");
 	predir = opendir(working_dir);
@@ -152,14 +156,13 @@ ParserInfo compile (char* dir_name)
 	//printf("first file in parent directory: %s\n", preentry->d_name);
 	while((preentry = readdir(predir)) != NULL) {
 		// check if it's a jack file
-			char file_name[1000];
-			sprintf(file_name, "%s/%s", working_dir, preentry->d_name);
+			snprintf(file_name, sizeof(file_name), "%s/%s", working_dir, preentry->d_name);
 			if (strstr(file_name, ".jack") == NULL) {
-				//printf("File: %s is not a jack file\n", file_name);
+				printf("File: %s is not a jack file\n", file_name);
 				continue;
 			}
 			else {
-				//printf("File: %s is a jack file\n", file_name);
+				printf("File: %s is a jack file\n", file_name);
 			}
 			InitParser(file_name);
 			p = Parse();
@@ -180,14 +183,14 @@ ParserInfo compile (char* dir_name)
 	}
 	while ((entry = readdir(dir)) != NULL) {
 		// check if it's a jack file
-			char file_name[1000];
-			sprintf(file_name, "%s/%s", dir_name, entry->d_name);
+			
+			snprintf(file_name, sizeof(file_name), "%s/%s", dir_name, entry->d_name);
 			if (strstr(file_name, ".jack") == NULL) {
-				// printf("File: %s is not a jack file\n", file_name);
+				printf("File: %s is not a jack file\n", file_name);
 				continue;
 			}
 			else {
-				//printf("File: %s is a jack file\n", file_name);
+				printf("File: %s is a jack file\n", file_name);
 			}
 			InitParser(file_name);
 			// printf("Current error: %d\n", p.er);

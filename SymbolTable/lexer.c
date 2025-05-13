@@ -22,7 +22,6 @@ Date Work Commenced:25/2/2025
 #include <stdbool.h>
 #include <ctype.h>
 #include "lexer.h"
-#include "compiler.h"
 
 
 // YOU CAN ADD YOUR OWN FUNCTIONS, DECLARATIONS AND VARIABLES HERE
@@ -119,7 +118,7 @@ void BuildToken(){
     t.tp = EOFile;
     strcpy(t.lx, "End of file");
     t.ln = LineCount;
-    strcpy(t.fl, current_file);
+    strncpy(t.fl, current_file, sizeof(t.fl) - 1);
     TokenReady = true;
     return;
   }
@@ -130,7 +129,7 @@ void BuildToken(){
     t.ec = EofInCom;
     t.ln = LineCount;
     strcpy(t.lx, "Error: unexpected eof in comment");
-    strcpy(t.fl, current_file);
+    strncpy(t.fl, current_file, sizeof(t.fl) - 1);
     TokenReady = true;
     return;
   }
@@ -148,7 +147,7 @@ void BuildToken(){
           t.ec = EofInStr;
           t.ln = LineCount;
           strcpy(t.lx, "Error: unexpected eof in string constant");
-          strcpy(t.fl, current_file);
+          strncpy(t.fl, current_file, sizeof(t.fl) - 1);
           TokenReady = true;
           return;
         }
@@ -159,17 +158,17 @@ void BuildToken(){
           t.ec = NewLnInStr;
           t.ln = LineCount;
           strcpy(t.lx, "Error: new line in string constant");
-          strcpy(t.fl, current_file);
+          strncpy(t.fl, current_file, sizeof(t.fl) - 1);
           TokenReady = true;
           return;
         }
       }
       buffer[chr] = '\0';
       t.tp = STRING;
-      strcpy(t.lx, buffer);
+      strncpy(t.lx, buffer, sizeof(t.lx) - 1);
       strcpy(buffer, ResetBuffer(buffer)); chr = 0;
       t.ln = LineCount;
-      strcpy(t.fl, current_file);
+      strncpy(t.fl, current_file, sizeof(t.fl) - 1);
       TokenReady = true;
       return;
       
@@ -185,9 +184,9 @@ void BuildToken(){
       } else {
         t.tp = ID;
       }
-      strcpy(t.lx, buffer);
+      strncpy(t.lx, buffer, sizeof(t.lx) - 1);
       t.ln = LineCount;
-      strcpy(t.fl, current_file);
+      strncpy(t.fl, current_file, sizeof(t.fl) - 1);
       strcpy(buffer, ResetBuffer(buffer)); chr = 0;
       ungetc(c, input); // Put back the last character
       TokenReady = true;
@@ -203,9 +202,9 @@ void BuildToken(){
       }
       buffer[chr] = '\0';
       t.tp = INT;
-      strcpy(t.lx, buffer);
+      strncpy(t.lx, buffer, sizeof(t.lx) - 1);
       t.ln = LineCount;
-      strcpy(t.fl, current_file);
+      strncpy(t.fl, current_file, sizeof(t.fl) - 1);
       strcpy(buffer, ResetBuffer(buffer)); chr = 0;
       ungetc(c, input); // Put back the last character
       TokenReady = true;
@@ -218,7 +217,7 @@ void BuildToken(){
         t.lx[0] = c;
         t.lx[1] = '\0';
         t.ln = LineCount;
-        strcpy(t.fl, current_file);
+        strncpy(t.fl, current_file, sizeof(t.fl) - 1);
         TokenReady = true;
         return;
       } else {
@@ -249,7 +248,6 @@ void StoreTokens(){
   //Build the token stream and store it in the token list
   // This function should be called after the lexer has been initialised and the source file opened
   int tok = 0;
-  count++;
   while (1){
     if (TokenReady){
       TokenList[tok] = t;
@@ -284,8 +282,6 @@ Token PeekNextToken ()
 {
   if (TokenListReady){
     Token current = TokenList[CurrentToken];
-      if (count > 2 && count <4){
-  }
     return current;
   }
   t.tp = ERR;

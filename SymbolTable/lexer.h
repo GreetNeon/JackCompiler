@@ -1,7 +1,5 @@
 // header file for the lexer module
 
-#define TEST		// uncomment this line to run the self-grader
-
 #ifndef LEXER_HEADER_DEFINED
 #define LEXER_HEADER_DEFINED
 // the TokenType enumerated data type represents all possible token types in a JACK program, ERR is used to indicate a lexical error
@@ -19,7 +17,7 @@ typedef struct {
   char lx[128];		// the lexeme (string) of the token, e.g. "34". If the lexer encounters an error this string is set to an error message
   int ec;			// If the lexer encounters an error this value is set to the proper error code (see the above enumerated list of errors)
   int ln;			// the line number of the source file where the token exists
-  char fl[32];		// the file (name) in which this token exists
+  char fl[128];		// the file (name) in which this token exists
 } Token;
 
 

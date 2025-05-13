@@ -38,29 +38,6 @@ typedef struct
 	Token tk;
 } ParserInfo;
 
-typedef struct{
-    char name[128];
-    SymbolTable* scope;
-    Token token;
-} IdentifierStrct; // Define the Identifier type
-
-typedef struct{
-    IdentifierStrct* data[1280][3]; // Array of identifiers
-    int topIndex; // Index of the top of the stack
-} IdentifierStack; // Define the IdentifierStack type
-
-typedef struct{
-	IdentifierStrct* data[1280][3]; // Array of identifiers
-	int topIndex; // Index of the top of the stack
-} SpecialIdStack;
-
-void pushId(IdentifierStack* s, char* str, SymbolTable* st, Token t, int ArrIdx, int check);
-IdentifierStrct* popId(IdentifierStack* s, int idx);
-void pushSpId(SpecialIdStack* s, char* str, SymbolTable* st, Token t, int ArrIdx);
-void initSpIdStack(SpecialIdStack* s);
-void InitIdStack(IdentifierStack* s);
-int indexIdStack(IdentifierStack* s, char* str, SymbolTable* st);
-int indexSpIdStack(SpecialIdStack* s, char* str, SymbolTable* st);
 int InitParser (char* file_name); // initialise the parser to parse source code in file_name
 ParserInfo Parse (); // parse the input file (the one passed to InitParser)
 int StopParser (); // stop the parser and do any necessary clean up

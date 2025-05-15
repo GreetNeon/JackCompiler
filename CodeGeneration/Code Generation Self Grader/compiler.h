@@ -7,10 +7,11 @@
 #include "parser.h"
 
 
-extern SymbolTable ProgramScope;
-extern Stack SymbolStack; // Stack for symbol table scopes
-extern IdentifierStack IdStack; // Stack for identifiers
-extern SpecialIdStack SpIdStack; // Stack for special identifiers
+SymbolTable ProgramScope;
+Stack SymbolStack; // Stack for symbol table scopes
+IdentifierStack IdStack; // Stack for identifiers
+SpecialIdStack SpIdStack; // Stack for special identifiers
+int count;
 
 int InitCompiler ();
 ParserInfo compile (char* dir_name);

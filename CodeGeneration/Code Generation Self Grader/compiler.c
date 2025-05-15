@@ -37,11 +37,6 @@ Date Work Commenced:27/04/25
 //if it is in the program scope, index program scope children and check if id[1] is in the child scope, if not undeclared error
 //if no error return null
 
-SymbolTable ProgramScope;
-Stack SymbolStack;
-IdentifierStack IdStack;
-SpecialIdStack SpIdStack;
-
 int InitCompiler ()
 {
 	InitSymbolTable(&ProgramScope);
@@ -163,8 +158,11 @@ ParserInfo compile (char* dir_name)
 		// check if it's a jack file
 			snprintf(file_name, sizeof(file_name), "%s/%s", working_dir, preentry->d_name);
 			if (strstr(file_name, ".jack") == NULL) {
-				//printf("File: %s is not a jack file\n", file_name);
+				printf("File: %s is not a jack file\n", file_name);
 				continue;
+			}
+			else {
+				printf("File: %s is a jack file\n", file_name);
 			}
 			InitParser(file_name);
 			p = Parse();
@@ -188,8 +186,11 @@ ParserInfo compile (char* dir_name)
 			
 			snprintf(file_name, sizeof(file_name), "%s/%s", dir_name, entry->d_name);
 			if (strstr(file_name, ".jack") == NULL) {
-				//printf("File: %s is not a jack file\n", file_name);
+				printf("File: %s is not a jack file\n", file_name);
 				continue;
+			}
+			else {
+				printf("File: %s is a jack file\n", file_name);
 			}
 			InitParser(file_name);
 			// printf("Current error: %d\n", p.er);

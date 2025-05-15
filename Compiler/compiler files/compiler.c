@@ -46,7 +46,7 @@ int main ()
 {
 	InitCompiler ();
 	ParserInfo p = compile ("Pong");
-	PrintError (p);
+	//PrintError (p);
 	StopCompiler ();
 	return 1;
 }

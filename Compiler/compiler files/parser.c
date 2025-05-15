@@ -730,16 +730,6 @@ void Operand(){
 					t = GetNextToken();
 					if (strcmp(t.lx, ")") != 0){
 						error(closeBracketExpected, t);
-
-						return;
-}}}}
-int InitParser(char* file_name){
-	Token temp; temp.tp = ERR;
-	InitLexer(file_name);
-	pi.er = none;
-	pi.tk = temp;
-	return 1;
-}
 						return;
 					}
 				}
